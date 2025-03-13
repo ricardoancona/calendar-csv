@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Events CSV Tool</title>
+    <style>
+        :root {
+            --primary-color: #5e81ac;
+            --primary-hover: #4c6a8e;
+            --accent-color: #88c0d0;
+            --light-bg: #eceff4;
+            --medium-gray: #d8dee9;
+            --dark-gray: #4c566a;
+            --text-color: #2e3440;
+            --error-color: #bf616a;
+            --error-light: #ebccd1;
+            --success-color: #a3be8c;
+            --border-radius: 6px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: white;
+        }
+        
+        .app-container {
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 1.5rem;
+        }
+        
+        h1 {
+            margin: 0;
+            font-weight: 500;
+            font-size: 1.8rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin: 0.5rem 0 1rem;
+            font-weight: 500;
+            font-size: 1.4rem;
+        }
+        
+        p {
+            margin-bottom: 0.6rem;
+            color: var(--dark-gray);
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        #instructions {
+            background-color: var(--light-bg);
+            padding: 0.5rem 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        #instructions p:first-of-type {
+            margin-top: 0.4rem;
+        }
+        
+        #instructions p:last-of-type {
+            margin-bottom: 0.4rem;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            resize: vertical;
+            color: var(--text-color);
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(94, 129, 172, 0.2);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        #output {
+            margin-top: 2rem;
+            border-top: 1px solid var(--medium-gray);
+            padding-top: 1.5rem;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            background-color: var(--error-light);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .download-link {
+            display: inline-block;
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            margin: 1rem 0;
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s;
+        }
+        
+        .download-link:hover {
+            background-color: #8fad7b;
+            text-decoration: none;
+            color: white;
+        }
+        
+        pre {
+            background-color: var(--light-bg);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            border: 1px solid var(--medium-gray);
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            color: var(--dark-gray);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>📅 Calendar Events CSV Tool</h1>
+        </header>
+        
+        <div class="content">
+            <div id="instructions">
+                <h2>Instructions</h2>
+                <p>Add your events using the form below.</p>
+                <p>• Enter one event per line with format: "Date | Title | Start Time | End Time (optional) | Location (optional) | Description (optional)"</p>
+                <p>• Default date format: DD.MM. - the tool will use the nearest future occurrence.</p>
+                <p>• For descriptions, you can use \n for line breaks</p>
+                <p>• When finished, click "Generate CSV".</p>
+                <p>To import to Google Calendar: <a href="https://calendar.google.com/calendar/u/0/r/settings/export" target="_blank">Click here</a> to go to the import page and upload your CSV file.</p>
+            </div>
+
+            <div id="errorMessages" class="error-message"></div>
+            <textarea id="eventInput">05.09. | Dentist Appointment | 10:00
+22.12. | Dinner | 18:30 | | Home | Tacos?
+15.04. | Jaws (124m, OmU, 1/1)* | 20:00 | 22:30 | Arsenal | Check tickets</textarea>
+            <button onclick="validateAndGenerate()">Generate CSV</button>
+            
+            <div id="output"></div>
+        </div>
+    </div>
+    
+    <footer>
+        Calendar Events CSV Tool • v1.1
+    </footer>
+
+    <script>
+        function parseDate(dateStr) {
+            const [day, month] = dateStr.split('.');
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const parsedDate = new Date(currentYear, parseInt(month) - 1, parseInt(day));
+            
+            // If the parsed date is in the past, use next year
+            if (parsedDate < now) {
+                parsedDate.setFullYear(currentYear + 1);
+            }
+            
+            return parsedDate;
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            // Ensure time is in HH:MM format
+            const timeParts = timeStr.split(':');
+            return timeParts.length === 2 
+                ? `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}:00` 
+                : '';
+        }
+
+        function validateInput(input) {
+            const lines = input.trim().split('\n');
+            const errors = [];
+            const validationResults = [];
+            
+            lines.forEach((line, index) => {
+                if (!line.trim()) {
+                    validationResults.push({ valid: true, line: line });
+                    return;
+                }
+                
+                // Check if there's a pipe after the date
+                const dateFormatRegex = /^\d{2}\.\d{2}\.\s*\|/;
+                if (!dateFormatRegex.test(line)) {
+                    errors.push(`Line ${index + 1}: Missing required pipe after date. Format should be "DD.MM. | Title"`);
+                    validationResults.push({ valid: false, line: line });
+                    return;
+                }
+                
+                // Check for valid date format
+                const datePartRegex = /^(\d{2})\.(\d{2})\./;
+                const dateMatch = line.match(datePartRegex);
+                if (!dateMatch) {
+                    errors.push(`Line ${index + 1}: Invalid date format. Use DD.MM.`);
+                    validationResults.push({ valid: false, line: line });
+                    return;
+                }
+                
+                const day = parseInt(dateMatch[1]);
+                const month = parseInt(dateMatch[2]);
+                
+                if (day < 1 || day > 31) {
+                    errors.push(`Line ${index + 1}: Invalid day (${day}). Day should be between 1 and 31.`);
+                    validationResults.push({ valid: false, line: line });
+                    return;
+                }
+                
+                if (month < 1 || month > 12) {
+                    errors.push(`Line ${index + 1}: Invalid month (${month}). Month should be between 1 and 12.`);
+                    validationResults.push({ valid: false, line: line });
+                    return;
+                }
+                
+                // Check time format if provided
+                const parts = line.split('|').map(part => part.trim());
+                if (parts.length > 2) {
+                    const timeRegex = /^\d{1,2}:\d{2}$/;
+                    const startTime = parts[2];
+                    if (startTime && !timeRegex.test(startTime)) {
+                        errors.push(`Line ${index + 1}: Invalid start time format. Use HH:MM`);
+                        validationResults.push({ valid: false, line: line });
+                        return;
+                    }
+                    
+                    if (parts.length > 3 && parts[3]) {
+                        const endTime = parts[3];
+                        if (endTime && !timeRegex.test(endTime)) {
+                            errors.push(`Line ${index + 1}: Invalid end time format. Use HH:MM`);
+                            validationResults.push({ valid: false, line: line });
+                            return;
+                        }
+                    }
+                }
+                
+                validationResults.push({ valid: true, line: line });
+            });
+            
+            return { 
+                valid: errors.length === 0,
+                errors: errors,
+                validationResults: validationResults
+            };
+        }
+        
+        function highlightErrors(validationResults) {
+            const textarea = document.getElementById('eventInput');
+            const lines = textarea.value.split('\n');
+            const errorLines = [];
+            
+            validationResults.forEach((result, index) => {
+                if (!result.valid) {
+                    errorLines.push(index);
+                }
+            });
+            
+            // Create highlighted text
+            if (errorLines.length > 0) {
+                const highlightedLines = lines.map((line, index) => {
+                    if (errorLines.includes(index)) {
+                        return line + ' ← Error';
+                    }
+                    return line;
+                });
+                
+                textarea.value = highlightedLines.join('\n');
+                
+                // Scroll to first error
+                const text = textarea.value;
+                const firstErrorPos = text.indexOf('← Error');
+                if (firstErrorPos !== -1) {
+                    textarea.focus();
+                    textarea.setSelectionRange(firstErrorPos, firstErrorPos);
+                    textarea.scrollTop = textarea.scrollHeight / lines.length * errorLines[0];
+                }
+            }
+        }
+
+        function validateAndGenerate() {
+            const input = document.getElementById('eventInput').value;
+            const errorDiv = document.getElementById('errorMessages');
+            
+            // Reset error display
+            errorDiv.style.display = 'none';
+            errorDiv.innerHTML = '';
+            
+            if (!input.trim()) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = 'Please enter at least one event.';
+                return;
+            }
+            
+            const validation = validateInput(input);
+            
+            if (!validation.valid) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = '<strong>Please fix the following errors:</strong><br>' + 
+                                     validation.errors.join('<br>');
+                highlightErrors(validation.validationResults);
+                return;
+            }
+            
+            generateCSV();
+        }
+
+        function generateCSV() {
+            const input = document.getElementById('eventInput').value;
+            const outputDiv = document.getElementById('output');
+            const lines = input.trim().split('\n');
+            
+            // CSV headers
+            const csvLines = [
+                'Subject,Start Date,Start Time,End Date,End Time,Location,Description'
+            ];
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                const parts = line.split('|').map(part => part.trim());
+                if (parts.length < 2) return;
+
+                const dateStr = parts[0];
+                const title = parts[1];
+                
+                const startDate = parseDate(dateStr);
+                const startDateStr = formatDate(startDate);
+                
+                // Optional fields
+                const startTime = parts.length > 2 && parts[2] ? formatTime(parts[2]) : '';
+                const endTime = parts.length > 3 && parts[3] ? formatTime(parts[3]) : '';
+                const location = parts.length > 4 ? parts[4] : '';
+                const description = parts.length > 5 ? parts[5].replace(/\\n/g, ' ') : '';
+
+                // Construct CSV line
+                const csvLine = [
+                    `"${title}"`,
+                    startDateStr,
+                    startTime,
+                    startDateStr,
+                    endTime,
+                    `"${location || ''}"`,
+                    `"${description || ''}"`
+                ].join(',');
+
+                csvLines.push(csvLine);
+            });
+
+            const csvContent = csvLines.join('\n');
+            
+            // Create downloadable CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'calendar_events.csv');
+            link.innerHTML = 'Download CSV';
+            link.className = 'download-link';
+            
+            outputDiv.innerHTML = '<h2>Your CSV is ready:</h2>';
+            outputDiv.appendChild(link);
+
+            // Show preview
+            const previewHeading = document.createElement('h2');
+            previewHeading.textContent = 'CSV Preview:';
+            outputDiv.appendChild(previewHeading);
+            
+            const preview = document.createElement('pre');
+            preview.textContent = csvContent;
+            outputDiv.appendChild(preview);
+            
+            // Scroll to output
+            outputDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
